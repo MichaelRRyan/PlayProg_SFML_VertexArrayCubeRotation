@@ -10,15 +10,42 @@ Game::Game() : window(VideoMode(800, 600), "OpenGL Cube")
 
 Game::~Game() {}
 
-
 // Vertices for one Triangle
-float vertices[] = { 1.0f, 1.0f, -5.0f, -1.0f, 1.0f, -5.0f, -1.0f, -1.0f, -5.0f };
+float vertices[] = { -1.0f, -1.0f, 1.0f,
+					1.0f, -1.0f, 1.0f,
+					1.0f, 1.0f, 1.0f,
+					-1.0f, 1.0f, 1.0f,
+					-1.0f, -1.0f, -1.0f,
+					1.0f, -1.0f, -1.0f,
+					1.0f, 1.0f, -1.0f,
+					-1.0f, 1.0f, -1.0f };
 
 // Colors for those vertices
-float colors[] = { 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+float colors[] = {
+	1.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	1.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 1.0f,
+	1.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 1.0f,
+	0.0f, 0.0f, 0.0f
+};
 
 // Index to be drawn
-unsigned int vertex_index[] = { 0, 1, 2 };
+unsigned int vertex_index[] = { 1, 5, 6,
+								6, 2, 1,
+								4, 0, 3,
+								3, 7, 4,
+								3, 2, 6, 
+								6, 7, 3,
+								0, 4, 5,
+								5, 1, 0,
+								0, 1, 2,
+								2, 3, 0,
+								4, 7, 6,
+								6, 5, 4 };
+
 
 void Game::run()
 {
@@ -27,10 +54,8 @@ void Game::run()
 
 	Event event;
 
-	while (isRunning) {
-
-		cout << "Game running..." << endl;
-
+	while (isRunning)
+	{
 		while (window.pollEvent(event))
 		{
 			if (event.type == Event::Closed)
@@ -38,6 +63,7 @@ void Game::run()
 				isRunning = false;
 			}
 		}
+
 		update();
 		render();
 	}
@@ -53,18 +79,33 @@ void Game::initialize()
 	glLoadIdentity();
 	gluPerspective(45.0, window.getSize().x / window.getSize().y, 1.0, 500.0);
 	glMatrixMode(GL_MODELVIEW);
+	glTranslatef(0.0f, 0.0f, -5.0f);
+	glEnable(GL_CULL_FACE);
 }
 
 void Game::update()
 {
 	elapsed = clock.getElapsedTime();
 
-	cout << "Update up" << endl;
+	if (elapsed.asSeconds() >= 1.0f / 60.0f)
+	{
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+		{
+			//for (int i = 0; i < 36; i++)
+			//{
+			//	//vertices[i] = 
+			//}
+			glRotatef(0.2, 1, 0, 0);
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
+			glRotatef(0.2f, 0.0f, 1.0f, 0.0f);
+	}
 }
 
 void Game::render()
 {
-	cout << "Drawing" << endl;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -75,7 +116,7 @@ void Game::render()
 
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, &vertex_index);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, &vertex_index);
 
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
