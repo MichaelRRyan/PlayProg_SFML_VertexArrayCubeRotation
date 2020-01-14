@@ -3,7 +3,11 @@
 bool flip = false;
 int current = 1;
 
-Game::Game() : window(VideoMode(800, 600), "OpenGL Cube")
+Game::Game() :
+	window(VideoMode(800, 600), "OpenGL Cube"),
+	m_rotations{ 0.0f,0.0f,0.0f },
+	m_translations{ 0.0f,0.0f,0.0f },
+	m_scale{ 100.0f }
 {
 
 }
@@ -11,7 +15,7 @@ Game::Game() : window(VideoMode(800, 600), "OpenGL Cube")
 Game::~Game() {}
 
 // Vertices for one Triangle
-float vertices[] = { -1.0f, -1.0f, 1.0f,
+float baseVertices[] = { -1.0f, -1.0f, 1.0f,
 					1.0f, -1.0f, 1.0f,
 					1.0f, 1.0f, 1.0f,
 					-1.0f, 1.0f, 1.0f,
@@ -19,6 +23,8 @@ float vertices[] = { -1.0f, -1.0f, 1.0f,
 					1.0f, -1.0f, -1.0f,
 					1.0f, 1.0f, -1.0f,
 					-1.0f, 1.0f, -1.0f };
+
+float vertices[24];
 
 // Colors for those vertices
 float colors[] = {
@@ -79,8 +85,13 @@ void Game::initialize()
 	glLoadIdentity();
 	gluPerspective(45.0, window.getSize().x / window.getSize().y, 1.0, 500.0);
 	glMatrixMode(GL_MODELVIEW);
-	glTranslatef(0.0f, 0.0f, -5.0f);
+	glTranslatef(0.0f, 0.0f, -8.0f);
 	glEnable(GL_CULL_FACE);
+
+	for (int i = 0; i < 24; i++)
+	{
+		vertices[i] = baseVertices[i];
+	}
 }
 
 void Game::update()
@@ -89,17 +100,71 @@ void Game::update()
 
 	if (elapsed.asSeconds() >= 1.0f / 60.0f)
 	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+		clock.restart();
+
+		// Get the key input
+		// Reset transformations
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
 		{
-			//for (int i = 0; i < 36; i++)
-			//{
-			//	//vertices[i] = 
-			//}
-			glRotatef(0.2, 1, 0, 0);
+			m_rotations = { 0.0f, 0.0f, 0.0f };
+			m_translations = { 0.0f, 0.0f, 0.0f };
+			m_scale = 100.0f;
 		}
 
+		// Scale
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+			m_scale -= 10.0f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+			m_scale += 10.0f;
+
+		// Rotate
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::X))
+			m_rotations.x += 0.8f;
+
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Y))
-			glRotatef(0.2f, 0.0f, 1.0f, 0.0f);
+			m_rotations.y += 0.8f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+			m_rotations.z += 0.8f;
+
+		// Translation
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+			m_translations.x += 0.1f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+			m_translations.x -= 0.1f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+			m_translations.y += 0.1f;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+			m_translations.y -= 0.1f;
+
+
+		// Create an identity matrix
+		cube::Matrix3f transformationMatrix{ 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f };
+
+		transformationMatrix = transformationMatrix * cube::Matrix3f::Scale(m_scale, m_scale);
+
+		transformationMatrix = transformationMatrix * cube::Matrix3f::RotationX(m_rotations.x);
+		transformationMatrix = transformationMatrix * cube::Matrix3f::RotationY(m_rotations.y);
+		transformationMatrix = transformationMatrix * cube::Matrix3f::RotationZ(m_rotations.z);
+
+		// Apply the transformations
+		for (int i = 0; i < 24; i += 3)
+		{
+			// Rotation and scale
+			cube::Vector3f vector{ baseVertices[i], baseVertices[i + 1], baseVertices[i + 2] };
+			vector = transformationMatrix * vector;
+			vertices[i + 2] = vector.z;
+
+			// Apply the translations
+			vector.z = 1.0f;
+			vector = cube::Matrix3f::Translate(m_translations.x, m_translations.y) * vector;
+			vertices[i] = vector.x;
+			vertices[i + 1] = vector.y;
+		}
 	}
 }
 
